@@ -1,34 +1,29 @@
-## The features of this model must incorporate:
-#  the starting station name, 
-## the hour the trip started, 
-## the weekday of the trip,
-##  and the address of the start station labelled as location. 
-## You must use 2019 Year data only to train this model.
-
-CREATE or REPLACE MODEL austin.austin_location_model
+CREATE OR REPLACE MODEL austin.austin_location_model
 OPTIONS
-  (model_type='linear_reg', labels=['duration_minutes']) AS
+  (model_type='linear_reg', labels=['durationMinutes']) AS
 
 WITH 
-  daynames AS
-    (SELECT ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'] AS daysofweek),
+  daynames AS (
+    SELECT ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] AS daysofweek
+  ),
 
   biketrips AS (
-  SELECT
-    duration_minutes as durationMinutes,
-    start_station_name as startStationName,
-    EXTRACT(HOUR FROM start_time) AS startHour,
-    daysofweek[ORDINAL(EXTRACT(DAYOFWEEK FROM start_time))] AS dayOfWeek,
-    EXTRACT(YEAR FROM start_time) AS tripYear,
-    stations.address as location
-  FROM
-    `bigquery-public-data.austin_bikeshare.bikeshare_trips`, daynames
-  WHERE
-    tripYear = 2019
-  JOIN
-    `bigquery-public-data.austin_bikeshare.bikeshare_stations` AS stations
-    WHERE start_station_id = stations.station_id
+    SELECT
+      duration_minutes AS durationMinutes,
+      start_station_name AS startStationName,
+      EXTRACT(HOUR FROM start_time) AS startHour,
+      daysofweek[ORDINAL(EXTRACT(DAYOFWEEK FROM start_time))] AS dayOfWeek,
+      EXTRACT(YEAR FROM start_time) AS tripYear,
+      stations.address AS location
+    FROM
+      `bigquery-public-data.austin_bikeshare.bikeshare_trips` AS trips, daynames
+    JOIN
+      `bigquery-public-data.austin_bikeshare.bikeshare_stations` AS stations
+    ON
+      trips.start_station_id = stations.station_id
+    WHERE
+      EXTRACT(YEAR FROM start_time) = 2019
   )
 
-  SELECT *
-  FROM biketrips
+SELECT *
+FROM biketrips;
